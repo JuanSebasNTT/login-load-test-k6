@@ -1,0 +1,40 @@
+CONCLUSIONES DE LA PRUEBA DE CARGA
+
+Se ejecutó una prueba de carga sobre el servicio de autenticación:
+https://fakestoreapi.com/auth/login
+
+ESCENARIO
+- Herramienta: K6
+- Modelo de carga: Constant Arrival Rate
+- Tasa objetivo: 20 TPS
+- Duración: 60 segundos
+- Usuarios: Parametrizados desde archivo CSV
+- Métrica de error: Solo errores HTTP 5XX
+
+RESULTADOS OBTENIDOS
+- Throughput promedio: ~19–20 TPS
+- Percentil 95 del tiempo de respuesta: ~430 ms
+- Tiempo promedio de respuesta: ~340 ms
+- Tasa de errores del sistema (5XX): 0.00%
+- Usuarios virtuales promedio: 8–10 VUs
+- Iteraciones ejecutadas: ~1200
+
+EVALUACIÓN DE CRITERIOS
+- TPS mínimo (20 TPS): CUMPLE
+- Tiempo máximo permitido (< 1.5s): CUMPLE
+- Tasa de error (< 3%): CUMPLE
+
+HALLAZGOS
+El servicio mantiene estabilidad bajo una carga constante de 20 TPS,
+con latencias consistentes y sin evidencia de degradación progresiva
+o saturación del backend durante la ventana de prueba.
+
+CONCLUSIÓN FINAL
+El endpoint de autenticación es capaz de soportar la carga definida
+cumpliendo con los umbrales de desempeño y confiabilidad establecidos.
+
+RECOMENDACIONES
+- Ejecutar pruebas escalonadas para identificar el punto de saturación
+del servicio por encima de 20 TPS.
+- Integrar esta prueba en un pipeline CI/CD para validación continua
+de rendimiento.
