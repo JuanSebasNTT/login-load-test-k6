@@ -32,9 +32,3 @@ o saturación del backend durante la ventana de prueba.
 CONCLUSIÓN FINAL
 El endpoint de autenticación es capaz de soportar la carga definida
 cumpliendo con los umbrales de desempeño y confiabilidad establecidos.
-
-RECOMENDACIONES
-- Ejecutar pruebas escalonadas para identificar el punto de saturación
-del servicio por encima de 20 TPS.
-- Integrar esta prueba en un pipeline CI/CD para validación continua
-de rendimiento.
