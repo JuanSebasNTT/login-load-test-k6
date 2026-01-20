@@ -1,0 +1,147 @@
+Autor: Sebastian Gonzalez
+Fecha: 2025-04-24
+Fuente de datos: Archivo `textSummary.txt` y diagrama de relación VUs vs HTTP Requests por segundo
+
+---
+
+1. Objetivo del Informe
+
+El presente informe tiene como objetivo analizar los resultados obtenidos en la prueba de carga del servicio **App Transaction Balance**, evaluando el comportamiento del sistema bajo carga sostenida, la relación entre el número de usuarios virtuales (VUs) y el volumen de peticiones por segundo (TPS), así como identificar hallazgos, conclusiones y recomendaciones técnicas orientadas a la mejora del desempeño y la estabilidad del servicio.
+
+---
+
+2. Resumen Ejecutivo
+
+Durante la ejecución de la prueba de carga se observó que el sistema fue capaz de procesar un volumen elevado de solicitudes con un throughput promedio cercano a **82–83 solicitudes por segundo**, alcanzando un máximo de **140 usuarios virtuales concurrentes**.
+
+Sin embargo, los resultados muestran un **porcentaje de errores del 2.44%** y una **latencia elevada en percentiles altos**, donde el **p(95) de la duración de las solicitudes alcanzó aproximadamente 1.57 segundos**, superando el umbral recomendado para servicios transaccionales de alta disponibilidad.
+
+Adicionalmente, el diagrama VUs vs TPS evidencia una **degradación significativa del throughput cuando el número de usuarios virtuales disminuye bruscamente**, lo que sugiere eventos de saturación, timeouts o inestabilidad temporal del backend durante la prueba.
+
+---
+
+3. Escenario de Prueba
+
+* **Tipo de prueba:** Prueba de carga sostenida
+* **Métrica principal:** Transacciones por segundo (TPS / http_reqs)
+* **Usuarios virtuales máximos (VUs):** 140
+* **Total de solicitudes ejecutadas:** 276,650
+* **Duración promedio de iteración:** 1.86 segundos
+
+---
+
+4. Métricas Relevantes
+
+4.1 Volumen de Tráfico
+
+Solicitudes totales (http_reqs): 276,650
+Throughput promedio: ~73.18 req/s
+Throughput observado en el diagrama: ~82.6 req/s en fase estable
+
+4.2 Latencia
+
+http_req_duration (promedio): 861.68 ms
+p(90): 1.28 s
+p(95): 1.57 s
+Máximo registrado: 29.93 s
+
+4.3 Errores
+
+Tasa de error total (http_req_failed): 2.44%
+Errores HTTP 4XX: 769
+Errores HTTP 5XX: 5,987
+
+4.4 Concurrencia
+
+VUs mínimos: 2
+VUs máximos: 140
+
+---
+
+5. Análisis del Diagrama VUs vs Peticiones por Segundo
+
+El diagrama de monitoreo muestra una relación directa entre la cantidad de usuarios virtuales y el número de solicitudes por segundo procesadas por el sistema:
+
+5.1 Fase de Estabilización
+
+Al incrementarse los VUs hasta aproximadamente 140, el sistema logra estabilizar el throughput en torno a 80–85 req/s.
+En esta fase, la latencia se mantiene dentro de valores aceptables en promedio.
+
+5.2 Fase de Degradación
+
+Se observa una caída abrupta del throughput acompañada por una reducción significativa en los VUs activos.
+Esta caída sugiere la presencia de:
+
+  * Timeouts del servidor
+  * Saturación de recursos (CPU, memoria o conexiones)
+  * Posibles reinicios o bloqueos temporales del servicio
+
+5.3 Recuperación
+
+Posteriormente, el sistema recupera parcialmente la capacidad de procesamiento, volviendo a niveles cercanos a 75–80 req/s, aunque con mayor variabilidad en la latencia.
+
+---
+
+6. Hallazgos
+
+1. Latencia elevada en percentiles altos:
+   Aunque el promedio de respuesta se mantiene por debajo de 1 segundo, el p(95) supera los 1.5 segundos, lo que indica que una fracción significativa de los usuarios experimenta tiempos de respuesta altos.
+
+2. Presencia de errores del lado del servidor (5XX):
+   Se registraron aproximadamente 5,987 errores 5XX, lo que indica fallos internos del backend bajo carga.
+
+3. Inestabilidad bajo alta concurrencia:
+   El diagrama evidencia una caída pronunciada en el throughput cuando el sistema alcanza su pico de usuarios virtuales, lo que sugiere un punto de saturación cercano a los 130–140 VUs.
+
+4. Capacidad limitada de escalamiento:
+   A pesar del incremento en usuarios virtuales, el throughput se mantiene en una meseta cercana a los 80–85 req/s, lo que indica un posible cuello de botella a nivel de aplicación, base de datos o red.
+
+---
+
+7. Conclusiones
+
+El sistema evaluado demuestra capacidad para manejar un volumen alto de solicitudes concurrentes; sin embargo, presenta degradación de rendimiento y errores del servidor al aproximarse a su umbral máximo de carga.
+
+El comportamiento observado sugiere que el punto de operación estable del sistema se encuentra por debajo de los 140 usuarios virtuale, ya que a partir de este nivel se incrementa la latencia, aparecen errores 5XX y se produce una caída temporal del throughput.
+
+Si bien el throughput promedio es aceptable, los tiempos de respuesta en percentiles altos y la presencia de errores del backend representan un riesgo para la experiencia del usuario en escenarios de alta demanda.
+
+---
+
+8. Recomendaciones
+
+1. Optimización del backend:
+
+   * Analizar tiempos de respuesta de servicios internos y dependencias (base de datos, APIs externas).
+   * Revisar uso de conexiones concurrentes y pools de base de datos.
+
+2. Escalamiento horizontal:
+
+   * Implementar balanceo de carga y autoescalado para manejar picos superiores a 120 VUs sin degradación.
+
+3. Monitoreo de infraestructura:
+
+   * Correlacionar métricas de CPU, memoria y latencia de red con los momentos de caída del throughput.
+
+4. Pruebas progresivas:
+
+   * Ejecutar pruebas escalonadas con incrementos de 20 VUs para identificar con mayor precisión el punto de saturación.
+
+5. Gestión de errores 5XX:
+
+   * Implementar mecanismos de tolerancia a fallos, reintentos controlados y circuit breakers para mejorar la resiliencia del servicio.
+
+---
+
+9. Anexo – Métricas Clave
+
+| Métrica                   | Valor       |
+| ------------------------- | ----------- |
+| Throughput promedio       | ~73 req/s   |
+| Throughput pico observado | ~82.6 req/s |
+| p(95) Latencia            | 1.57 s      |
+| Latencia máxima           | 29.93 s     |
+| VUs máximos               | 140         |
+| Tasa de error total       | 2.44%       |
+| Errores 5XX               | 5,987       |
+
